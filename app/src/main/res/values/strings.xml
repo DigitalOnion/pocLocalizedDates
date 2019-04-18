@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">pocLocalizedDates</string>
+
+    <string name="intro">Localized Dates Practice App</string>
+    <string name="date_input_mask">JJ/MM/AAAA</string>
+
+</resources>
