@@ -25,8 +25,12 @@ public class MainActivity extends AppCompatActivity {
     EditText dateInput;
     TextView feedback;
 
-    String dateDisplayPattern;
-    String dateInputMask;
+    char[] charPattern;
+    char[] charDisplay;
+    char[] charMask;
+    char delimiter;
+
+    DateFormat sdf = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, Locale.FRENCH);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,12 +44,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-//        Calendar now = Calendar.getInstance(Locale.FRANCE);
-//        String displayDate = now.getDisplayName(Calendar.DAY_OF_MONTH, Calendar.SHORT, Locale.FRANCE);
-
         StringBuilder sb = new StringBuilder();
 
-        DateFormat sdf = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT, Locale.FRENCH);
         String dateStr = sdf.format(new Date());
         sb.append("Today is ").append(dateStr).append('\n');
 
@@ -74,35 +74,68 @@ public class MainActivity extends AppCompatActivity {
         feedback = findViewById(R.id.feedback);
         dateInput = findViewById(R.id.date_input);
 
-        dateDisplayPattern = getString(R.string.date_input_mask);
-        dateInputMask = dateDisplayPattern.replaceAll("[A-Za-z]", "*");
-        char[] charPattern = dateDisplayPattern.toCharArray();
-        char[] charMask = dateInputMask.toCharArray();
+        init();
 
-        dateInput.setText(dateDisplayPattern);
         dateInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void onTextChanged(CharSequence text, int start, int before, int count) {
                 feedback.setText(String.format("start=%d before=%d count=%d", start, before, count));
-                if(count == 1) {
+                if(count <= 1) {
                     int idx = start;
-                    while(idx < charMask.length && charMask[idx] != '*') { idx++; }
-                    charPattern[idx] = text.charAt(start);
-                    dateInput.setText(new String(charPattern));
-                    dateInput.setSelection(++idx);
-                }
-                if(count == 0 && before == 1) {
-
+                    if(count == 1) {
+                        while(idx < charMask.length && charMask[idx] != '*') { idx++; }
+                        charDisplay[idx] = text.charAt(start);
+                        idx++;
+                    }
+                    if(count == 0 && before == 1) {
+                        while(idx >= 0 && charMask[idx] != '*') { idx--; }
+                        charDisplay[idx] = charPattern[idx];
+                    }
+                    String textDisplay = new String(charDisplay);
+                    dateInput.setText(textDisplay);
+                    dateInput.setSelection(idx);
+                    chooseColors(textDisplay, delimiter, charMask);
                 }
             }
 
+            @Override public void afterTextChanged(Editable s) {}
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-            @Override public void afterTextChanged(Editable s) { }
         });
-
-
     }
 
+    private void chooseColors(String dateText, char delimiter, char[] mask) {
+        if(dateText.length() == charMask.length && verifyDate(dateText.toString(), delimiter, charMask))
+            dateInput.setBackgroundColor(getColor(R.color.colorItsADate));
+        else
+            dateInput.setBackgroundColor(getColor(R.color.colorNotADate));
+    }
 
+    private boolean verifyDate(String dateText, char delimiter, char[] mask) {
+        if(dateText.length() != mask.length)
+            return false;
+        if(! dateText.matches(
+                "[0-9]+#[0-9]+#[0-9]+".replace('#', delimiter)))
+            return false;
+        try {
+            Date date = sdf.parse(dateText);
+            return true;
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+
+    private void init() {
+        String inputMask = getString(R.string.date_input_mask);
+        charPattern = inputMask.toCharArray();
+        charDisplay = inputMask.toCharArray();
+        charMask = getString(R.string.date_input_mask)
+                .replaceAll("[A-Za-z]", "*").toCharArray();
+        delimiter = inputMask.replaceAll("[A-Za-z]", "").charAt(0);
+        dateInput.setText(inputMask);
+    }
+
+    public void onClickButtonReset(View view) {
+        init();
+    }
 
 }
