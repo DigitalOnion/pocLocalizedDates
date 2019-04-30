@@ -1,12 +1,10 @@
 package com.outerspace.poclocalizeddates;
 
-import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.text.method.KeyListener;
-import android.view.KeyEvent;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -17,7 +15,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Map;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
     TextView display;
@@ -38,7 +37,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         display = findViewById(R.id.display);
-    }
+        dateInput = findViewById(R.id.date_input);
+        feedback = findViewById(R.id.feedback);    }
 
     @Override
     protected void onStart() {
@@ -47,13 +47,12 @@ public class MainActivity extends AppCompatActivity {
         display.setText(exerciseWithDate(new Date()).toString());
 
         init();
-        feedback = findViewById(R.id.feedback);
-        dateInput = findViewById(R.id.date_input);
         dateInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void onTextChanged(CharSequence text, int start, int before, int count) {
                 feedback.setText(String.format("start=%d before=%d count=%d", start, before, count));
-                if(count <= 1) {
+                String textDisplay = "";
+                if(count <= 1 && start < charMask.length) {
                     int idx = start;
                     if(count == 1) {
                         while(idx < charMask.length && charMask[idx] != '*') { idx++; }
@@ -64,15 +63,19 @@ public class MainActivity extends AppCompatActivity {
                         while(idx >= 0 && charMask[idx] != '*') { idx--; }
                         charDisplay[idx] = charPattern[idx];
                     }
-                    String textDisplay = new String(charDisplay);
+                    textDisplay = new String(charDisplay);
                     dateInput.setText(textDisplay);
                     dateInput.setSelection(idx);
-                    chooseColors(textDisplay, delimiter, charMask);
+                } else if(start >= charMask.length) {
+                    textDisplay = text.subSequence(0, charMask.length).toString();
+                    dateInput.setText(textDisplay);
+                    dateInput.setSelection(charMask.length);
                 }
+                chooseColors(textDisplay, delimiter, charMask);
             }
 
-            @Override public void afterTextChanged(Editable s) {}
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void afterTextChanged(Editable s) { }
         });
     }
 
